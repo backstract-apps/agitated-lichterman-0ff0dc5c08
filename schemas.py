@@ -43,7 +43,7 @@ class ReadUsers(BaseModel):
 
 
 class PostTodos(BaseModel):
-    user_id: Union[int, float] = Field(...)
+    user_id: int = Field(...)
     title: str = Field(..., max_length=500)
     is_completed: Union[int, float] = Field(...)
     created_at: Optional[str]=None
