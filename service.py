@@ -169,8 +169,8 @@ async def post_todos(
     user_id: Union[int, float] = raw_data.user_id
     title: str = raw_data.title
     is_completed: Union[int, float] = raw_data.is_completed
-    created_at: str = convert_to_datetime(raw_data.created_at)
-    updated_at: str = convert_to_datetime(raw_data.updated_at)
+    created_at: datetime = convert_to_datetime(raw_data.created_at)
+    updated_at: datetime = convert_to_datetime(raw_data.updated_at)
 
     record_to_be_added = {
         "title": title,
