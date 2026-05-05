@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agitated-lichterman-0ff0dc5c08-srv
+  namespace: apps-release
+spec:
+  selector:
+    app: agitated-lichterman-0ff0dc5c08
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 7070
+  type: ClusterIP

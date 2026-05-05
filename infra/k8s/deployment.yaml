@@ -1,0 +1,125 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agitated-lichterman-0ff0dc5c08-bst-token
+  namespace: apps-release
+  labels:
+    app: agitated-lichterman-0ff0dc5c08
+    managed-by: backstract
+  annotations:
+    backstract.io/token-scope: "storage.*,cache.*"
+type: Opaque
+stringData:
+  token: "PLACEHOLDER_BST_TOKEN_REPLACE_AT_RUNTIME"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agitated-lichterman-0ff0dc5c08-depl
+  namespace: apps-release
+  labels:
+    app: agitated-lichterman-0ff0dc5c08
+    release: prometheus # Added label for PodMonitor discovery
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: agitated-lichterman-0ff0dc5c08
+      release: prometheus # Added label for PodMonitor discovery
+  template:
+    metadata:
+      labels:
+        app: agitated-lichterman-0ff0dc5c08
+        release: prometheus # Added label for PodMonitor discovery
+    spec:
+      serviceAccountName: alloy-service-account
+      volumes:
+      - name: alloy-config
+        configMap:
+          name: alloy-configmap
+          items:
+          - key: alloy.river
+            path: config.alloy
+
+      - name: podinfo
+        downwardAPI:
+          items:
+          - path: "labels"
+            fieldRef:
+              fieldPath: metadata.labels
+          - path: "annotations"
+            fieldRef:
+              fieldPath: metadata.annotations
+      tolerations:
+        - key: "workload"
+          operator: "Equal"
+          value: "user"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nodepool
+                    operator: In
+                    values: ["spot-users"]
+      containers:
+      - name: agitated-lichterman-0ff0dc5c08
+        image: 216084506783.dkr.ecr.ap-south-1.amazonaws.com/backstract_apps:agitated-lichterman-0ff0dc5c08
+        imagePullPolicy: Always
+        env:
+        - name: BACKSTRACT_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: agitated-lichterman-0ff0dc5c08-bst-token
+              key: token
+        - name: BACKSTRACT_PLATFORM_URL
+          value: "https://api-release.beemerbenzbentley.site/sigma"
+        envFrom:
+        - configMapRef:
+            name: env-configmap-coll-82fea7b566794900bb98fd7741dcfbc6-deployment-51f48aab-f3ee-4fef-a2b8-5ba359e2088f
+        - secretRef:
+            name: app-secrets-coll-82fea7b566794900bb98fd7741dcfbc6
+        ports:
+        - containerPort: 7070
+          name: http # Optional for HTTP traffic
+        - containerPort: 7070 #same as the deployed code
+          name: metrics # Added port for metrics scraping
+        resources:
+          requests:
+            memory: "210Mi"
+            cpu: "200m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+
+      - name: alloy-sidecar
+        image: grafana/alloy:latest
+        args:
+        - "run"
+        - "/etc/alloy/config.alloy"
+        - "--server.http.listen-addr=0.0.0.0:12345"
+        ports:
+        - name: otlp-grpc
+          containerPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          containerPort: 4318
+          protocol: TCP
+        - name: alloy-http
+          containerPort: 12345
+          protocol: TCP
+        volumeMounts:
+        - name: alloy-config
+          mountPath: /etc/alloy
+        - name: podinfo
+          mountPath: /etc/podinfo
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "384Mi"
+            cpu: "300m"

@@ -1,0 +1,24 @@
+kind: HTTPScaledObject
+apiVersion: http.keda.sh/v1alpha1
+metadata:
+  name: agitated-lichterman-0ff0dc5c08-scaler
+  namespace: apps-release
+spec:
+  hosts:
+    - cc1fbde45ead-in-south-01.mayson.dev
+  pathPrefixes:
+    - /us-east-2-backstractelb-39337c-coll-82fea7b566794900bb98fd7741dcfbc6/ # e.g. /infallible-naveen-... agitated-lichterman-0ff0dc5c08/
+  scaleTargetRef:
+    name: agitated-lichterman-0ff0dc5c08-depl
+    kind: Deployment
+    apiVersion: apps/v1
+    service: agitated-lichterman-0ff0dc5c08-srv # e.g. coll-8a2a...-srv
+    port: 80
+  replicas:
+    min: 0
+    max: 10
+  scaledownPeriod: 1800 #inseconds
+  scalingMetric:
+    requestRate:
+      targetValue: 100
+      window: 1m
